@@ -278,3 +278,25 @@ SET @max_p = 5.0;
 EXECUTE stmt_price USING @max_p;
 
 DEALLOCATE PREPARE stmt_price;
+
+
+DELIMITER $$
+
+
+CREATE PROCEDURE sp_PriceStats()
+BEGIN
+    SELECT COUNT(*) AS 'Кол-во', AVG(price) AS 'Среднее', SUM(price) AS 'Сумма', MAX(price) AS 'Макс', MIN(price) AS 'Мин'
+    FROM Cars;
+END$$
+
+
+CREATE PROCEDURE sp_LogAction()
+BEGIN
+    
+    INSERT INTO LogTable (log_date, action) VALUES (NOW(), 'Тестовое действие');
+END$$
+
+DELIMITER ;
+
+CALL sp_PriceStats();
+CALL sp_LogAction();

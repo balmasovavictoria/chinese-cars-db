@@ -221,7 +221,7 @@ WHERE c.price > ALL (
     WHERE b2.brand_name = 'Chery'
 );
 -- Создание постоянного View
-CREATE VIEW vw_Cars AS
+CREATE OR REPLACE VIEW vw_Cars AS
 SELECT b.brand_name, m.model_name, c.price, c.hp
 FROM Cars c
 JOIN Models m ON c.model_id = m.model_id

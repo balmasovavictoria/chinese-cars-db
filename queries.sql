@@ -196,3 +196,85 @@ JOIN Models m ON b.brand_id = m.brand_id
 JOIN Cars c ON m.model_id = c.model_id 
 GROUP BY b.brand_name
 ORDER BY COUNT(m.model_id) DESC;
+
+SELECT m.model_name, c.price
+FROM Cars c
+JOIN Models m ON c.model_id = m.model_id
+WHERE c.price > (SELECT AVG(price) FROM Cars)
+ORDER BY c.price DESC;
+
+SELECT m.model_name, c.price
+FROM Cars c
+JOIN Models m ON c.model_id = m.model_id
+WHERE m.brand_id IN (
+    SELECT brand_id FROM Brands WHERE brand_name = 'Haval'
+);
+
+SELECT m.model_name, c.price
+FROM Cars c
+JOIN Models m ON c.model_id = m.model_id
+WHERE c.price > ALL (
+    SELECT c2.price
+    FROM Cars c2
+    JOIN Models m2 ON c2.model_id = m2.model_id
+    JOIN Brands b2 ON m2.brand_id = b2.brand_id
+    WHERE b2.brand_name = 'Chery'
+);
+-- Создание постоянного View
+CREATE VIEW vw_Cars AS
+SELECT b.brand_name, m.model_name, c.price, c.hp
+FROM Cars c
+JOIN Models m ON c.model_id = m.model_id
+JOIN Brands b ON m.brand_id = b.brand_id;
+
+-- Проверка View
+SELECT * FROM vw_Cars;
+
+-- Временное представление через WITH
+WITH AvgBrand AS (
+    SELECT b.brand_name, AVG(c.price) AS avg_price
+    FROM Brands b
+    JOIN Models m ON b.brand_id = m.brand_id
+    JOIN Cars c ON m.model_id = c.model_id
+    GROUP BY b.brand_name
+)
+SELECT * FROM AvgBrand
+WHERE avg_price > (SELECT AVG(price) FROM Cars);
+
+-- Анализ до индекса
+EXPLAIN
+SELECT m.model_name, c.price
+FROM Cars c
+JOIN Models m ON c.model_id = m.model_id
+WHERE c.price < 3.0;
+
+-- Создание индексов
+CREATE INDEX idx_price ON Cars(price);
+CREATE INDEX idx_hp ON Cars(hp);
+
+-- Анализ после индекса
+EXPLAIN
+SELECT m.model_name, c.price
+FROM Cars c
+JOIN Models m ON c.model_id = m.model_id
+WHERE c.price < 3.0;
+
+START TRANSACTION;
+
+UPDATE Cars SET price = 99.999 WHERE car_id = 1;
+SELECT car_id, price FROM Cars WHERE car_id = 1; 
+
+ROLLBACK;
+
+SELECT car_id, price FROM Cars WHERE car_id = 1; 
+
+PREPARE stmt_price FROM 
+'SELECT m.model_name, c.price FROM Cars c JOIN Models m ON c.model_id = m.model_id WHERE c.price <= ?';
+
+SET @max_p = 3.0;
+EXECUTE stmt_price USING @max_p;
+
+SET @max_p = 5.0;
+EXECUTE stmt_price USING @max_p;
+
+DEALLOCATE PREPARE stmt_price;

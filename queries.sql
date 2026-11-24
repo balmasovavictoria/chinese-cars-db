@@ -249,6 +249,8 @@ JOIN Models m ON c.model_id = m.model_id
 WHERE c.price < 3.0;
 
 -- Создание индексов
+DROP INDEX IF EXISTS idx_price ON Cars;
+DROP INDEX IF EXISTS idx_hp ON Cars;
 CREATE INDEX idx_price ON Cars(price);
 CREATE INDEX idx_hp ON Cars(hp);
 

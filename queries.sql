@@ -248,6 +248,12 @@ FROM Cars c
 JOIN Models m ON c.model_id = m.model_id
 WHERE c.price < 3.0;
 
+EXPLAIN
+SELECT m.model_name, c.hp
+FROM Cars c
+JOIN Models m ON c.model_id = m.model_id
+WHERE c.hp > 200;
+
 -- Создание индексов
 DROP INDEX IF EXISTS idx_price ON Cars;
 DROP INDEX IF EXISTS idx_hp ON Cars;
@@ -260,6 +266,12 @@ SELECT m.model_name, c.price
 FROM Cars c
 JOIN Models m ON c.model_id = m.model_id
 WHERE c.price < 3.0;
+
+EXPLAIN
+SELECT m.model_name, c.hp
+FROM Cars c
+JOIN Models m ON c.model_id = m.model_id
+WHERE c.hp > 200;
 
 START TRANSACTION;
 

@@ -281,4 +281,89 @@ EXECUTE stmt_price USING @max_p;
 
 DEALLOCATE PREPARE stmt_price;
 
+DROP PROCEDURE IF EXISTS sp_PriceStats;
+DELIMITER //
 
+CREATE PROCEDURE sp_PriceStats()
+BEGIN
+    SELECT 
+        COUNT(*) AS 'Кол-во машин',
+        AVG(price) AS 'Средняя цена',
+        SUM(price) AS 'Сумма цен',
+        MAX(price) AS 'Максимальная цена',
+        MIN(price) AS 'Минимальная цена'
+    FROM Cars;
+END //
+
+DELIMITER ;
+
+CALL sp_PriceStats();
+
+CREATE TABLE IF NOT EXISTS LogTable (
+    log_id INT AUTO_INCREMENT PRIMARY KEY,
+    log_date DATETIME NOT NULL,
+    action VARCHAR(255)
+);
+DROP PROCEDURE IF EXISTS sp_LogAction;
+DELIMITER //
+
+CREATE PROCEDURE sp_LogAction(IN p_action VARCHAR(255))
+BEGIN
+    INSERT INTO LogTable (log_date, action) 
+    VALUES (NOW(), p_action);
+END //
+
+DELIMITER ;
+
+CALL sp_LogAction('Добавлена новая машина');
+SELECT * FROM LogTable;
+
+DROP FUNCTION IF EXISTS fn_CountByCondition;
+
+DELIMITER //
+
+CREATE FUNCTION fn_CountByCondition(p_min_price DECIMAL(5,3), p_max_price DECIMAL(5,3)) 
+RETURNS INT
+DETERMINISTIC
+BEGIN
+    DECLARE v_count INT;
+    
+    SELECT COUNT(*) INTO v_count 
+    FROM Cars 
+    WHERE price >= p_min_price AND price <= p_max_price;
+    
+    RETURN v_count;
+END //
+
+DELIMITER ;
+-- Сколько машин от 0 до 3 млн?
+SELECT fn_CountByCondition(0.0, 3.0) AS 'Бюджетные машины';
+-- Сколько машин от 3 до 5 млн?
+SELECT fn_CountByCondition(3.0, 5.0) AS 'Средние машины';
+
+DELIMITER //
+
+CREATE FUNCTION fn_PriceSegment(p_price DECIMAL(5,3)) 
+RETURNS VARCHAR(20)
+DETERMINISTIC
+BEGIN
+    DECLARE v_segment VARCHAR(20);
+    
+    IF p_price < 3.0 THEN
+        SET v_segment = 'Бюджетный';
+    ELSEIF p_price <= 5.0 THEN
+        SET v_segment = 'Средний';
+    ELSE
+        SET v_segment = 'Премиум';
+    END IF;
+    
+    RETURN v_segment;
+END //
+
+DELIMITER ;
+
+SELECT 
+    model_id AS 'ID модели',
+    price AS 'Цена (млн руб.)', 
+    fn_PriceSegment(price) AS 'Ценовой сегмент'
+FROM Cars;
